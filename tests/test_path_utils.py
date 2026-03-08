@@ -143,3 +143,42 @@ class TestInferHashSize:
 
     def test_zero_hop_count_defaults_to_1(self):
         assert infer_hash_size("1a2b", 0) == 1
+
+
+class TestContactToRadioDictHashMode:
+    """Test that Contact.to_radio_dict() correctly derives out_path_hash_mode."""
+
+    def test_1byte_hops(self):
+        from app.models import Contact
+
+        c = Contact(public_key="aa" * 32, last_path="1a2b3c", last_path_len=3)
+        d = c.to_radio_dict()
+        assert d["out_path_hash_mode"] == 0  # infer_hash_size=1, mode=0
+
+    def test_2byte_hops(self):
+        from app.models import Contact
+
+        c = Contact(public_key="bb" * 32, last_path="1a2b3c4d", last_path_len=2)
+        d = c.to_radio_dict()
+        assert d["out_path_hash_mode"] == 1  # infer_hash_size=2, mode=1
+
+    def test_3byte_hops(self):
+        from app.models import Contact
+
+        c = Contact(public_key="cc" * 32, last_path="1a2b3c4d5e6f", last_path_len=2)
+        d = c.to_radio_dict()
+        assert d["out_path_hash_mode"] == 2  # infer_hash_size=3, mode=2
+
+    def test_no_path_defaults_to_mode0(self):
+        from app.models import Contact
+
+        c = Contact(public_key="dd" * 32, last_path=None, last_path_len=-1)
+        d = c.to_radio_dict()
+        assert d["out_path_hash_mode"] == 0
+
+    def test_empty_path_defaults_to_mode0(self):
+        from app.models import Contact
+
+        c = Contact(public_key="ee" * 32, last_path="", last_path_len=0)
+        d = c.to_radio_dict()
+        assert d["out_path_hash_mode"] == 0
