@@ -280,6 +280,21 @@ class TestPacketFormatConversion:
         assert "path" in result
         assert result["path"] == ""
 
+    def test_direct_multibyte_route_formats_path_as_hop_identifiers(self):
+        # route=2 (DIRECT), payload_type=2, path_byte=0x82 -> 2 hops x 3 bytes
+        data = {"timestamp": 0, "data": "0A82AABBCCDDEEFF11", "snr": 1.0, "rssi": -70}
+        result = _format_raw_packet(data, "Node", "AA" * 32)
+        assert result["route"] == "D"
+        assert result["payload_len"] == "1"
+        assert result["path"] == "aabbcc,ddeeff"
+
+    def test_flood_multibyte_route_omits_path_field(self):
+        # route=1 (FLOOD), payload_type=2, path_byte=0x82 -> 2 hops x 3 bytes
+        data = {"timestamp": 0, "data": "0982AABBCCDDEEFF11", "snr": 1.0, "rssi": -70}
+        result = _format_raw_packet(data, "Node", "AA" * 32)
+        assert result["route"] == "F"
+        assert "path" not in result
+
     def test_unknown_version_uses_defaults(self):
         # version=1 in high bits, type=5, route=1
         header = (1 << 6) | (5 << 2) | 1
