@@ -1,3 +1,7 @@
+## [2.6.1] - 2026-03-08
+
+Misc: Fix busted docker builds; we don't have a 2.6.0 build sorry
+
 ## [2.6.0] - 2026-03-08
 
 Feature: A11y improvements
