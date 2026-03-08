@@ -144,7 +144,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 </details>
 
-### meshcore (2.2.5) — MIT
+### meshcore (2.2.28) — MIT
 
 <details>
 <summary>Full license text</summary>

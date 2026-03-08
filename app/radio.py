@@ -274,21 +274,53 @@ class RadioManager:
                             "set_flood_scope failed (firmware may not support it): %s", exc
                         )
 
-                    # Query path hash mode support (best-effort; older firmware won't report it)
+                    # Query path hash mode support (best-effort; older firmware won't report it).
+                    # If the library's parsed payload is missing path_hash_mode (e.g. stale
+                    # .pyc on WSL2 Windows mounts), fall back to raw-frame extraction.
+                    reader = mc._reader
+                    _original_handle_rx = reader.handle_rx
+                    _captured_frame: list[bytes] = []
+
+                    async def _capture_handle_rx(data: bytearray) -> None:
+                        from meshcore.packets import PacketType
+
+                        if len(data) > 0 and data[0] == PacketType.DEVICE_INFO.value:
+                            _captured_frame.append(bytes(data))
+                        return await _original_handle_rx(data)
+
+                    reader.handle_rx = _capture_handle_rx
+                    self.path_hash_mode = 0
+                    self.path_hash_mode_supported = False
                     try:
                         device_query = await mc.commands.send_device_query()
                         if device_query and "path_hash_mode" in device_query.payload:
                             self.path_hash_mode = device_query.payload["path_hash_mode"]
                             self.path_hash_mode_supported = True
+                        elif _captured_frame:
+                            # Raw-frame fallback: byte 1 = fw_ver, byte 81 = path_hash_mode
+                            raw = _captured_frame[-1]
+                            fw_ver = raw[1] if len(raw) > 1 else 0
+                            if fw_ver >= 10 and len(raw) >= 82:
+                                self.path_hash_mode = raw[81]
+                                self.path_hash_mode_supported = True
+                                logger.warning(
+                                    "path_hash_mode=%d extracted from raw frame "
+                                    "(stale .pyc? try: rm %s)",
+                                    self.path_hash_mode,
+                                    getattr(
+                                        __import__("meshcore.reader", fromlist=["reader"]),
+                                        "__cached__",
+                                        "meshcore __pycache__/reader.*.pyc",
+                                    ),
+                                )
+                        if self.path_hash_mode_supported:
                             logger.info("Path hash mode: %d (supported)", self.path_hash_mode)
                         else:
-                            self.path_hash_mode = 0
-                            self.path_hash_mode_supported = False
                             logger.debug("Firmware does not report path_hash_mode")
                     except Exception as exc:
-                        self.path_hash_mode = 0
-                        self.path_hash_mode_supported = False
                         logger.debug("Failed to query path_hash_mode: %s", exc)
+                    finally:
+                        reader.handle_rx = _original_handle_rx
 
                     # Sync contacts/channels from radio to DB and clear radio
                     logger.info("Syncing and offloading radio data...")

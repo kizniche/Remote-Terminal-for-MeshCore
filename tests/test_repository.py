@@ -274,6 +274,19 @@ class TestContactAdvertPathRepository:
         assert paths[0].heard_count == 2
 
     @pytest.mark.asyncio
+    async def test_record_observation_preserves_full_multibyte_next_hop(self, test_db):
+        repeater_key = "ab" * 32
+        await ContactRepository.upsert({"public_key": repeater_key, "name": "Rmulti", "type": 2})
+
+        await ContactAdvertPathRepository.record_observation(
+            repeater_key, "aa11bb22", 1000, hop_count=2
+        )
+
+        paths = await ContactAdvertPathRepository.get_recent_for_contact(repeater_key, limit=10)
+        assert len(paths) == 1
+        assert paths[0].next_hop == "aa11"
+
+    @pytest.mark.asyncio
     async def test_prunes_to_most_recent_n_unique_paths(self, test_db):
         repeater_key = "bb" * 32
         await ContactRepository.upsert({"public_key": repeater_key, "name": "R2", "type": 2})

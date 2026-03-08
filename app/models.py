@@ -82,7 +82,8 @@ class ContactAdvertPath(BaseModel):
     path: str = Field(description="Hex-encoded routing path (empty string for direct)")
     path_len: int = Field(description="Number of hops in the path")
     next_hop: str | None = Field(
-        default=None, description="First hop toward us (2-char hex), or null for direct"
+        default=None,
+        description="First hop toward us as a full hop identifier, or null for direct",
     )
     first_seen: int = Field(description="Unix timestamp of first observation")
     last_seen: int = Field(description="Unix timestamp of most recent observation")

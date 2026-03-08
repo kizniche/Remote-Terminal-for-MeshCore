@@ -327,6 +327,28 @@ class TestContactDetail:
         assert repeater["heard_count"] == 2
 
     @pytest.mark.asyncio
+    async def test_detail_nearest_repeaters_use_full_multibyte_next_hop(self, test_db, client):
+        """Nearest repeater resolution should distinguish multi-byte hops with the same first byte."""
+        await _insert_contact(KEY_A, "Alice", type=1)
+        repeater_1 = "bb11" + "aa" * 30
+        repeater_2 = "bb22" + "cc" * 30
+        await _insert_contact(repeater_1, "Relay11", type=2)
+        await _insert_contact(repeater_2, "Relay22", type=2)
+
+        await ContactAdvertPathRepository.record_observation(KEY_A, "bb221122", 1000, hop_count=2)
+        await ContactAdvertPathRepository.record_observation(KEY_A, "bb223344", 1010, hop_count=2)
+
+        response = await client.get(f"/api/contacts/{KEY_A}/detail")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["nearest_repeaters"]) == 1
+        repeater = data["nearest_repeaters"][0]
+        assert repeater["public_key"] == repeater_2
+        assert repeater["name"] == "Relay22"
+        assert repeater["heard_count"] == 2
+
+    @pytest.mark.asyncio
     async def test_detail_advert_frequency_computed(self, test_db, client):
         """Advert frequency is computed from path observations over time span."""
         await _insert_contact(KEY_A, "Alice")
