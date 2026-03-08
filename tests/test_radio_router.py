@@ -161,6 +161,27 @@ class TestUpdateRadioConfig:
 
         assert exc.value.status_code == 400
 
+    @pytest.mark.asyncio
+    async def test_propagates_radio_error_when_setting_path_hash_mode(self):
+        mc = _mock_meshcore_with_info()
+        mc.commands.set_path_hash_mode = AsyncMock(
+            return_value=_radio_result(EventType.ERROR, {"error": "nope"})
+        )
+
+        with (
+            patch("app.routers.radio.require_connected", return_value=mc),
+            patch.object(radio_manager, "_meshcore", mc),
+            patch.object(radio_manager, "path_hash_mode_supported", True),
+            patch.object(radio_manager, "path_hash_mode", 0),
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await update_radio_config(RadioConfigUpdate(path_hash_mode=1))
+
+        assert exc.value.status_code == 500
+        assert "Failed to set path hash mode" in str(exc.value.detail)
+        assert radio_manager.path_hash_mode == 0
+        mc.commands.send_appstart.assert_not_awaited()
+
 
 class TestPrivateKeyImport:
     @pytest.mark.asyncio

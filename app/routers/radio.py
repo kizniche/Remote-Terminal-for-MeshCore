@@ -123,7 +123,12 @@ async def update_radio_config(update: RadioConfigUpdate) -> RadioConfigResponse:
                     status_code=400, detail="Firmware does not support path hash mode setting"
                 )
             logger.info("Setting path hash mode to %d", update.path_hash_mode)
-            await mc.commands.set_path_hash_mode(update.path_hash_mode)
+            result = await mc.commands.set_path_hash_mode(update.path_hash_mode)
+            if result is not None and result.type == EventType.ERROR:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to set path hash mode: {result.payload}",
+                )
             radio_manager.path_hash_mode = update.path_hash_mode
 
         # Sync time with system clock
