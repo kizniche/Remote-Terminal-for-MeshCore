@@ -5,11 +5,8 @@ ARG COMMIT_HASH=unknown
 
 WORKDIR /build
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY frontend/package.json ./
+COPY frontend/package.json frontend/.npmrc ./
+COPY frontend/lib/meshcore-decoder ./lib/meshcore-decoder
 RUN npm install
 
 COPY frontend/ ./

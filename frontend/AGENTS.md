@@ -12,6 +12,7 @@ Keep it aligned with `frontend/src` source code.
 - Tailwind utility classes + local CSS (`index.css`, `styles.css`)
 - Sonner (toasts)
 - Leaflet / react-leaflet (map)
+- Vendored `@michaelhart/meshcore-decoder` in `frontend/lib/meshcore-decoder` (local file dependency for multibyte-support build)
 - `meshcore-hashtag-cracker` + `nosleep.js` (channel cracker)
 
 ## Frontend Map
@@ -138,6 +139,9 @@ frontend/src/
     ├── useContactsAndChannels.test.ts
     ├── useWebSocket.dispatch.test.ts
     └── useWebSocket.lifecycle.test.ts
+
+frontend/lib/
+└── meshcore-decoder/      # Vendored local decoder package used by app + hashtag cracker
 ```
 
 ## Architecture Notes
