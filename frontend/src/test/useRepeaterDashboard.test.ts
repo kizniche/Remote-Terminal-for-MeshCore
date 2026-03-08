@@ -1,3 +1,4 @@
+import { StrictMode, createElement, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRepeaterDashboard } from '../hooks/useRepeaterDashboard';
@@ -122,6 +123,23 @@ describe('useRepeaterDashboard', () => {
     expect(result.current.paneData.status).toEqual(statusData);
     expect(result.current.paneStates.status.loading).toBe(false);
     expect(result.current.paneStates.status.error).toBe(null);
+  });
+
+  it('refreshPane still issues requests under StrictMode remount probing', async () => {
+    const statusData = { battery_volts: 4.2 };
+    mockApi.repeaterStatus.mockResolvedValueOnce(statusData);
+
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(StrictMode, null, children);
+
+    const { result } = renderHook(() => useRepeaterDashboard(repeaterConversation), { wrapper });
+
+    await act(async () => {
+      await result.current.refreshPane('status');
+    });
+
+    expect(mockApi.repeaterStatus).toHaveBeenCalledTimes(1);
+    expect(result.current.paneData.status).toEqual(statusData);
   });
 
   it('refreshPane retries up to 3 times', async () => {

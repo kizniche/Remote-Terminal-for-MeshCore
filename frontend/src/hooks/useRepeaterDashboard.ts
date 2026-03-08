@@ -121,6 +121,7 @@ export function useRepeaterDashboard(
   // Guard against setting state after unmount (retry timers firing late)
   const mountedRef = useRef(true);
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
