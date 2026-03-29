@@ -175,11 +175,11 @@ def _format_raw_packet(data: dict[str, Any], device_name: str, public_key_hex: s
     current_time = datetime.now()
     ts_str = current_time.isoformat()
 
-    # SNR/RSSI are always strings in reference output.
-    snr_val = data.get("snr")
-    rssi_val = data.get("rssi")
-    snr = str(snr_val) if snr_val is not None else "Unknown"
-    rssi = str(rssi_val) if rssi_val is not None else "Unknown"
+    # SNR/RSSI are sent as numeric values (float/int) when available, or None (JSON null)
+    # when absent. meshcoretomqtt sends null for missing values (Python None → JSON null),
+    # so we match that behaviour here.
+    snr: float | None = data.get("snr")
+    rssi: int | None = data.get("rssi")
 
     packet_hash = _calculate_packet_hash(raw_bytes)
 

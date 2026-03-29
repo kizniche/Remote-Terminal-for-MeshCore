@@ -210,8 +210,8 @@ class TestPacketFormatConversion:
         assert result["origin"] == "TestNode"
         assert result["origin_id"] == "AABBCCDD" * 8
         assert result["raw"] == "0A1B2C3D"
-        assert result["SNR"] == "5.5"
-        assert result["RSSI"] == "-90"
+        assert result["SNR"] == 5.5
+        assert result["RSSI"] == -90
         assert result["type"] == "PACKET"
         assert result["direction"] == "rx"
         assert result["len"] == "4"
@@ -222,11 +222,12 @@ class TestPacketFormatConversion:
         assert result["timestamp"]
         assert "T" in result["timestamp"]
 
-    def test_snr_rssi_unknown_when_none(self):
+    def test_snr_rssi_null_when_none(self):
+        """SNR/RSSI absent from radio data become JSON null (None)."""
         data = {"timestamp": 0, "data": "00", "snr": None, "rssi": None}
         result = _format_raw_packet(data, "Node", "AA" * 32)
-        assert result["SNR"] == "Unknown"
-        assert result["RSSI"] == "Unknown"
+        assert result["SNR"] is None
+        assert result["RSSI"] is None
 
     def test_packet_type_extraction(self):
         # Header 0x14 = type 5, route 0 (TRANSPORT_FLOOD): header + 4 transport + path_len.
